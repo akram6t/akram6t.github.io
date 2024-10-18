@@ -1,151 +1,163 @@
-# Apache Kafka Documentation for Beginners
+Here’s an example of a basic Kafka documentation for Node.js using Markdown (`.md`). This will cover how to set up Kafka with Node.js, basic producer and consumer code, and explain the concepts step by step.
 
-## Table of Contents
+---
 
-1. [Introduction](#introduction)
-2. [What is Apache Kafka?](#what-is-apache-kafka)
-3. [Key Concepts](#key-concepts)
-   - [Topics](#topics)
-   - [Producers](#producers)
-   - [Consumers](#consumers)
-   - [Brokers](#brokers)
-   - [Partitions](#partitions)
-   - [Replicas](#replicas)
-4. [Getting Started](#getting-started)
-   - [Installation](#installation)
-   - [Basic Configuration](#basic-configuration)
-   - [Running Kafka](#running-kafka)
-5. [Creating a Topic](#creating-a-topic)
-6. [Producing Messages](#producing-messages)
-7. [Consuming Messages](#consuming-messages)
-8. [Advanced Topics](#advanced-topics)
-   - [Kafka Connect](#kafka-connect)
-   - [Kafka Streams](#kafka-streams)
-   - [Schema Registry](#schema-registry)
-9. [Best Practices](#best-practices)
-10. [Conclusion](#conclusion)
+# Apache Kafka with Node.js
 
-## Introduction
+This documentation explains how to work with **Apache Kafka** in a **Node.js** environment. We will use the `kafkajs` library to produce and consume messages.
 
-Welcome to the Apache Kafka documentation for beginners! This guide is designed to help you understand the basics of Kafka, set it up, and start using it for your projects. Whether you're a developer, data engineer, or just curious about distributed systems, this guide will provide you with the foundational knowledge you need.
+## Prerequisites
 
-## What is Apache Kafka?
+1. **Node.js**: Ensure that Node.js is installed (version 14 or higher recommended).
+2. **Kafka**: Install and configure Apache Kafka on your local machine or use a Kafka service.
+3. **KafkaJS**: KafkaJS is a modern Apache Kafka client for Node.js.
 
-Apache Kafka is an open-source distributed event streaming platform used for high-performance data pipelines, streaming analytics, data integration, and mission-critical applications. It was originally developed by LinkedIn and later donated to the Apache Software Foundation. Kafka is designed to handle real-time data feeds with high throughput and low latency.
-
-## Key Concepts
-
-### Topics
-
-A **topic** is a category or feed name to which records (messages) are sent. Topics in Kafka are always multi-subscriber; that is, a topic can have zero, one, or many consumers that subscribe to the data written to it.
-
-### Producers
-
-**Producers** are applications that publish (write) data to Kafka topics. They can send messages to specific topics and can also specify the partition within the topic where the message should be stored.
-
-### Consumers
-
-**Consumers** are applications that subscribe to (read and process) data from Kafka topics. Consumers can join a group and share the work of reading from topics, ensuring that each message is only processed once by one consumer in the group.
-
-### Brokers
-
-A **broker** is a single Kafka server instance. Brokers receive messages from producers, assign offsets to them, and commit the messages to storage on disk. They also service consumers, responding to fetch requests for partitions and responding with the messages that have been committed to disk.
-
-### Partitions
-
-A **partition** is an ordered, immutable sequence of records that is continually appended to. Partitions allow the data in a topic to be distributed across multiple servers, providing scalability and fault tolerance.
-
-### Replicas
-
-**Replicas** are copies of partitions. They ensure durability and fault tolerance. Each partition can have multiple replicas, one of which is designated as the leader. The leader handles all read and write requests for the partition, while the followers replicate the leader.
-
-## Getting Started
-
-### Installation
-
-To get started with Kafka, you need to download and install it. Follow these steps:
-
-1. **Download Kafka**: Visit the [Apache Kafka download page](https://kafka.apache.org/downloads) and download the latest binary release.
-
-2. **Extract the Archive**: Extract the downloaded archive to a directory of your choice.
-
-   ```bash
-   tar -xzf kafka_<version>.tgz
-   cd kafka_<version>
-   ```
-
-### Basic Configuration
-
-Before running Kafka, you need to configure it. The main configuration files are located in the `config` directory.
-
-- **server.properties**: This file contains the configuration for the Kafka broker.
-- **zookeeper.properties**: This file contains the configuration for ZooKeeper, which Kafka uses for coordination.
-
-### Running Kafka
-
-1. **Start ZooKeeper**: Kafka requires ZooKeeper to manage its cluster state. Start ZooKeeper using the following command:
-
-   ```bash
-   bin/zookeeper-server-start.sh config/zookeeper.properties
-   ```
-
-2. **Start Kafka Broker**: Once ZooKeeper is running, start the Kafka broker:
-
-   ```bash
-   bin/kafka-server-start.sh config/server.properties
-   ```
-
-## Creating a Topic
-
-To create a topic, use the following command:
+To install `kafkajs`:
 
 ```bash
-bin/kafka-topics.sh --create --topic <topic_name> --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+npm install kafkajs
 ```
 
-Replace `<topic_name>` with the name of your topic.
+## Kafka Concepts Overview
 
-## Producing Messages
+- **Producer**: Responsible for sending records to Kafka topics.
+- **Consumer**: Responsible for reading records from Kafka topics.
+- **Topic**: A category or feed name where records are sent and stored.
+- **Partition**: Kafka topics are split into partitions for scalability.
+- **Broker**: Kafka cluster node that handles records.
 
-To produce messages to a Kafka topic, use the following command:
+---
+
+## Setting up Kafka with Node.js
+
+First, initialize a Node.js project if you haven’t already:
 
 ```bash
-bin/kafka-console-producer.sh --topic <topic_name> --bootstrap-server localhost:9092
+npm init -y
 ```
 
-This will open an interactive console where you can type messages to send to the topic.
-
-## Consuming Messages
-
-To consume messages from a Kafka topic, use the following command:
+Now install `kafkajs`:
 
 ```bash
-bin/kafka-console-consumer.sh --topic <topic_name> --from-beginning --bootstrap-server localhost:9092
+npm install kafkajs
 ```
 
-This will start consuming messages from the beginning of the topic and print them to the console.
+### Create Kafka Producer
 
-## Advanced Topics
+The producer sends messages to a Kafka topic.
 
-### Kafka Connect
+```javascript
+// producer.js
+const { Kafka } = require('kafkajs');
 
-**Kafka Connect** is a tool for scalably and reliably streaming data between Apache Kafka and other systems. It makes it simple to quickly define connectors that move large data sets into and out of Kafka.
+// Initialize Kafka
+const kafka = new Kafka({
+  clientId: 'my-app',
+  brokers: ['localhost:9092'],  // Kafka broker
+});
 
-### Kafka Streams
+const producer = kafka.producer();
 
-**Kafka Streams** is a client library for building applications and microservices, where the input and output data are stored in Kafka clusters. It combines the simplicity of writing and deploying standard Java and Scala applications on the client side with the benefits of Kafka's server-side cluster technology.
+const produceMessage = async () => {
+  await producer.connect();
+  
+  // Send a message to a topic
+  await producer.send({
+    topic: 'test-topic',
+    messages: [
+      { value: 'Hello Kafka!' },
+    ],
+  });
 
-### Schema Registry
+  console.log('Message sent successfully!');
+  await producer.disconnect();
+};
 
-**Schema Registry** provides a serving layer for your metadata. It provides a RESTful interface for storing and retrieving Avro schemas. It stores a versioned history of all schemas, provides multiple compatibility settings, and allows evolution of schemas according to the configured compatibility settings.
+produceMessage().catch(console.error);
+```
 
-## Best Practices
+**Explanation:**
+- A Kafka client is initialized with the `clientId` and `brokers` (Kafka server addresses).
+- `producer.send()` sends a message to the `test-topic` topic.
 
-- **Partitioning**: Choose the number of partitions carefully, as it affects the parallelism and scalability of your Kafka cluster.
-- **Replication Factor**: Set an appropriate replication factor to ensure data durability and fault tolerance.
-- **Monitoring**: Use monitoring tools like Prometheus and Grafana to keep an eye on your Kafka cluster's performance and health.
-- **Security**: Configure SSL/TLS for encryption and SASL for authentication to secure your Kafka cluster.
+### Create Kafka Consumer
+
+The consumer reads messages from a Kafka topic.
+
+```javascript
+// consumer.js
+const { Kafka } = require('kafkajs');
+
+const kafka = new Kafka({
+  clientId: 'my-app',
+  brokers: ['localhost:9092'],
+});
+
+const consumer = kafka.consumer({ groupId: 'test-group' });
+
+const consumeMessages = async () => {
+  await consumer.connect();
+
+  // Subscribe to the topic
+  await consumer.subscribe({ topic: 'test-topic', fromBeginning: true });
+
+  // Consume messages
+  await consumer.run({
+    eachMessage: async ({ topic, partition, message }) => {
+      console.log({
+        key: message.key ? message.key.toString() : null,
+        value: message.value.toString(),
+        headers: message.headers,
+      });
+    },
+  });
+};
+
+consumeMessages().catch(console.error);
+```
+
+**Explanation:**
+- A consumer is created with a `groupId`. Kafka uses the group ID to manage offsets for each consumer group.
+- The `consumer.run()` function fetches messages from the subscribed topic.
+
+---
+
+## Running Kafka Producer and Consumer
+
+Ensure that Kafka is running locally or use a Kafka service provider. Start your Kafka producer and consumer:
+
+1. **Start Producer**: Open a terminal and run:
+
+   ```bash
+   node producer.js
+   ```
+
+2. **Start Consumer**: In a separate terminal, run:
+
+   ```bash
+   node consumer.js
+   ```
+
+### Expected Output:
+
+When the producer sends the message, the consumer will output the message:
+
+```bash
+{
+  key: null,
+  value: 'Hello Kafka!',
+  headers: {}
+}
+```
+
+---
 
 ## Conclusion
 
-Congratulations! You've completed the beginner's guide to Apache Kafka. You now have a foundational understanding of Kafka's key concepts, how to set it up, and how to produce and consume messages. As you continue to explore Kafka, you'll discover its powerful capabilities for building real-time data pipelines and streaming applications. Happy streaming!
+This guide showed how to produce and consume messages in Kafka using Node.js with the `kafkajs` library. The Kafka ecosystem can be extended further by adding features like handling multiple partitions, retries, or more sophisticated error handling.
+
+For more details, check out the [KafkaJS documentation](https://kafka.js.org/docs/getting-started).
+
+---
+
+Let me know if you'd like to include any additional details, such as error handling, handling multiple partitions, or advanced configurations!
